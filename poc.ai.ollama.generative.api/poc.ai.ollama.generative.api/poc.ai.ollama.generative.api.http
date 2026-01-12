@@ -1,0 +1,6 @@
+@poc.ai.ollama.generative.api_HostAddress = http://localhost:5062
+
+GET {{poc.ai.ollama.generative.api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

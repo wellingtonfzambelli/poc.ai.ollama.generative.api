@@ -416,3 +416,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+/poc.ai.ollama.generative.api/poc.ai.ollama.generative.api/Database/01_schemas-script.sql
+/poc.ai.ollama.generative.api/poc.ai.ollama.generative.api/Database/02_inserts-script.sql
