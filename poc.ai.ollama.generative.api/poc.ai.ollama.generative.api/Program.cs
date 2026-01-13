@@ -22,10 +22,12 @@ builder.Services.AddCors(options =>
 
 
 // Add Ollama
-builder.Services.AddSingleton(_ =>
-    new OllamaApiClient("http://localhost:11434"));
+builder.Services.AddChatClient(
+    new OllamaApiClient("http://localhost:11434", "llama3")
+);
 
 var app = builder.Build();
+
 
 // Add Initializer
 DatabaseInitializer.Initialize(

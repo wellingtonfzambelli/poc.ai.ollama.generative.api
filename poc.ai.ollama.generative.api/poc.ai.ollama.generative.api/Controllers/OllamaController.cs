@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using OllamaSharp;
-using OllamaSharp.Models;
+using Microsoft.Extensions.AI;
+
 using poc.ai.ollama.generative.api.Dto;
 
 namespace poc.ai.ollama.generative.api.Controllers;
@@ -8,38 +8,23 @@ namespace poc.ai.ollama.generative.api.Controllers;
 [ApiController]
 [Route("api/ollama")]
 public sealed class OllamaController : ControllerBase
-{
-    private readonly OllamaApiClient _ollama;
+{    
+    private readonly IChatClient _chatClient;
 
-    public OllamaController(OllamaApiClient ollama) =>
-        _ollama = ollama;
+    public OllamaController(IChatClient chatClient) =>
+        _chatClient = chatClient;
 
     [HttpPost("prompt")]
     public async Task<IActionResult> SendPrompt([FromBody] AskToOllamaRequestDto request)
     {
-        if (string.IsNullOrWhiteSpace(request.Prompt))
-            return BadRequest("Prompt cannot be empty.");
-
-        var response = string.Empty;
-
-        var generateRequest = new GenerateRequest
+        IEnumerable<ChatMessage> messages = new List<ChatMessage>
         {
-            Model = "llama3",
-            Prompt = request.Prompt
+            new ChatMessage(ChatRole.System, "You are a helpful assistant."),
+            new ChatMessage(ChatRole.User, request.Prompt)
         };
 
-        await foreach (var chunk in _ollama.GenerateAsync(generateRequest))
-        {
-            response += chunk.Response;
+        var result = await _chatClient.GetResponseAsync(messages);
 
-            if (chunk.Done)
-                break;
-        }
-
-        return Ok(new
-        {
-            prompt = request.Prompt,
-            response
-        });
+        return Ok(result.Text);
     }
 }
