@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OllamaSharp;
+using OllamaSharp.Models;
 using poc.ai.ollama.generative.api.Dto;
 
 namespace poc.ai.ollama.generative.api.Controllers;
@@ -8,12 +9,10 @@ namespace poc.ai.ollama.generative.api.Controllers;
 [Route("api/ollama")]
 public sealed class OllamaController : ControllerBase
 {
-    private readonly OllamaApiClient _ollamaClient;
+    private readonly OllamaApiClient _ollama;
 
-    public OllamaController(OllamaApiClient ollamaClient)
-    {
-        _ollamaClient = ollamaClient;
-    }
+    public OllamaController(OllamaApiClient ollama) =>
+        _ollama = ollama;
 
     [HttpPost("prompt")]
     public async Task<IActionResult> SendPrompt([FromBody] AskToOllamaRequestDto request)
@@ -21,28 +20,20 @@ public sealed class OllamaController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Prompt))
             return BadRequest("Prompt cannot be empty.");
 
-        var messages = new List<OllamaSharp.Models.Chat.ChatMessage>
-        {
-            new OllamaSharp.Models.Chat.ChatMessage(
-                OllamaSharp.Models.Chat.ChatRole.System,
-                "You are a helpful assistant."
-            ),
-            new OllamaSharp.Models.Chat.ChatMessage(
-                OllamaSharp.Models.Chat.ChatRole.User,
-                request.Prompt
-            )
-        };
-
         var response = string.Empty;
 
-        await foreach (var chunk in _ollamaClient.ChatAsync(
-            new OllamaSharp.Models.Chat.ChatRequest
-            {
-                Model = "llama3",
-                Messages = messages
-            }))
+        var generateRequest = new GenerateRequest
         {
-            response += chunk.Message?.Content;
+            Model = "llama3",
+            Prompt = request.Prompt
+        };
+
+        await foreach (var chunk in _ollama.GenerateAsync(generateRequest))
+        {
+            response += chunk.Response;
+
+            if (chunk.Done)
+                break;
         }
 
         return Ok(new
